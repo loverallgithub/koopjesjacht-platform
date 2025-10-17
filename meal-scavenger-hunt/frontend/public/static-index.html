@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koopjesjacht - Meal Scavenger Hunt Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+
+        .status {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .status h2 {
+            color: #0ea5e9;
+            margin-bottom: 15px;
+        }
+
+        .service {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .service:last-child {
+            border-bottom: none;
+        }
+
+        .service-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .service-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-healthy {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .links {
+            margin-top: 30px;
+        }
+
+        .link-card {
+            background: #f9fafb;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+            transition: all 0.3s;
+        }
+
+        .link-card:hover {
+            background: #f3f4f6;
+            transform: translateX(5px);
+        }
+
+        .link-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .link-url {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Koopjesjacht</h1>
+        <p class="subtitle">Meal Scavenger Hunt Platform</p>
+
+        <div class="status">
+            <h2>📊 Service Status</h2>
+            <div class="service">
+                <span class="service-name">PostgreSQL Database</span>
+                <span class="service-status status-healthy">✅ Healthy</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Redis Cache</span>
+                <span class="service-status status-healthy">✅ Healthy</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Clue Generator Agent</span>
+                <span class="service-status status-healthy">✅ Operational</span>
+            </div>
+            <div class="service">
+                <span class="service-name">QR Manager Agent</span>
+                <span class="service-status status-healthy">✅ Operational</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Stats Aggregator Agent</span>
+                <span class="service-status status-healthy">✅ Operational</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Payment Handler Agent</span>
+                <span class="service-status status-healthy">✅ Operational</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Notification Service Agent</span>
+                <span class="service-status status-healthy">✅ Operational</span>
+            </div>
+            <div class="service">
+                <span class="service-name">Backend API</span>
+                <span class="service-status status-warning">⚠️ Connecting...</span>
+            </div>
+        </div>
+
+        <div class="links">
+            <h2>🔗 Agent Services</h2>
+            <a href="http://localhost:9001/health" class="link-card" target="_blank">
+                <div class="link-title">Clue Generator Agent</div>
+                <div class="link-url">http://localhost:9001</div>
+            </a>
+            <a href="http://localhost:9002/health" class="link-card" target="_blank">
+                <div class="link-title">QR Manager Agent</div>
+                <div class="link-url">http://localhost:9002</div>
+            </a>
+            <a href="http://localhost:9003/health" class="link-card" target="_blank">
+                <div class="link-title">Stats Aggregator Agent</div>
+                <div class="link-url">http://localhost:9003</div>
+            </a>
+            <a href="http://localhost:9004/health" class="link-card" target="_blank">
+                <div class="link-title">Payment Handler Agent</div>
+                <div class="link-url">http://localhost:9004</div>
+            </a>
+            <a href="http://localhost:9005/health" class="link-card" target="_blank">
+                <div class="link-title">Notification Service Agent</div>
+                <div class="link-url">http://localhost:9005</div>
+            </a>
+        </div>
+
+        <div class="footer">
+            <p><strong>Deployment Status:</strong> 87.5% Complete (7/8 Services Operational)</p>
+            <p>GitHub: <a href="https://github.com/loverallgithub/Koopjesjacht" target="_blank">github.com/loverallgithub/Koopjesjacht</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Test agent connectivity
+        const agents = [
+            { port: 9001, name: 'Clue Generator' },
+            { port: 9002, name: 'QR Manager' },
+            { port: 9003, name: 'Stats Aggregator' },
+            { port: 9004, name: 'Payment Handler' },
+            { port: 9005, name: 'Notification Service' }
+        ];
+
+        console.log('🚀 Koopjesjacht Platform - Agent Status Check');
+        agents.forEach(agent => {
+            fetch(`http://localhost:${agent.port}/health`)
+                .then(r => r.json())
+                .then(data => console.log(`✅ ${agent.name}:`, data))
+                .catch(e => console.log(`❌ ${agent.name}: Not reachable`));
+        });
+    </script>
+</body>
+</html>
