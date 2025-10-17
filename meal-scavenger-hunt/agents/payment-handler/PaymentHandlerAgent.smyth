@@ -1,0 +1,226 @@
+{
+  "version": "1.0",
+  "type": "smythos-agent",
+  "metadata": {
+    "name": "PaymentHandlerAgent",
+    "version": "1.0.0",
+    "description": "Multi-gateway payment processing with fraud prevention and compliance",
+    "author": "Koopjesjacht Platform",
+    "category": "Financial Services",
+    "tags": ["payments", "stripe", "paypal", "mollie", "fraud-prevention", "pci-dss"]
+  },
+  "agent": {
+    "type": "transactional",
+    "runtime": "node",
+    "capabilities": [
+      "payment_processing",
+      "gateway_routing",
+      "fraud_prevention",
+      "refund_handling",
+      "subscription_management",
+      "compliance_enforcement"
+    ]
+  },
+  "inputs": {
+    "action": {
+      "type": "string",
+      "required": true,
+      "enum": ["charge", "refund", "subscribe", "cancel", "verify"],
+      "description": "Payment action to perform"
+    },
+    "payment_data": {
+      "type": "object",
+      "required": true,
+      "schema": {
+        "amount": { "type": "decimal", "min": 0.01 },
+        "currency": { "type": "string", "default": "EUR" },
+        "method": { "type": "string" },
+        "user_id": { "type": "uuid" },
+        "entity_type": { "type": "string" },
+        "entity_id": { "type": "uuid" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "gateway_preference": {
+      "type": "string",
+      "required": false,
+      "enum": ["stripe", "paypal", "mollie", "auto"],
+      "default": "auto",
+      "description": "Preferred payment gateway"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "schema": {
+        "success": { "type": "boolean" },
+        "transaction_id": { "type": "string" },
+        "gateway_response": { "type": "object" },
+        "status": { "type": "string" },
+        "message": { "type": "string" },
+        "receipt_url": { "type": "string" },
+        "refund_id": { "type": "string" }
+      }
+    }
+  },
+  "workflow": {
+    "steps": [
+      {
+        "id": "validate_payment",
+        "type": "validate",
+        "description": "Validate payment data and amount"
+      },
+      {
+        "id": "fraud_check",
+        "type": "analyze",
+        "description": "Perform fraud detection",
+        "checks": ["velocity", "amount", "pattern", "device", "geolocation"]
+      },
+      {
+        "id": "select_gateway",
+        "type": "decide",
+        "description": "Select optimal payment gateway",
+        "criteria": {
+          "payment_method": 40,
+          "amount": 20,
+          "country": 20,
+          "gateway_health": 20
+        }
+      },
+      {
+        "id": "process_payment",
+        "type": "branch",
+        "description": "Route to appropriate gateway"
+      },
+      {
+        "id": "record_transaction",
+        "type": "database",
+        "operation": "insert",
+        "table": "payments"
+      },
+      {
+        "id": "emit_event",
+        "type": "event",
+        "event": "payment_processed"
+      }
+    ]
+  },
+  "gateways": {
+    "stripe": {
+      "supported_methods": ["card", "ideal", "sofort", "bancontact"],
+      "webhook_endpoint": "/webhooks/stripe",
+      "test_mode": true,
+      "retry_policy": {
+        "max_retries": 3,
+        "backoff": "exponential"
+      }
+    },
+    "paypal": {
+      "supported_methods": ["paypal", "card"],
+      "webhook_endpoint": "/webhooks/paypal",
+      "test_mode": true,
+      "retry_policy": {
+        "max_retries": 2,
+        "backoff": "linear"
+      }
+    },
+    "mollie": {
+      "supported_methods": ["ideal", "creditcard", "paypal", "sofort", "bancontact"],
+      "webhook_endpoint": "/webhooks/mollie",
+      "test_mode": true,
+      "retry_policy": {
+        "max_retries": 3,
+        "backoff": "exponential"
+      }
+    }
+  },
+  "fraud_rules": {
+    "velocity": {
+      "max_transactions_per_hour": 5,
+      "max_amount_per_day": 1000
+    },
+    "amount": {
+      "max_single_transaction": 500,
+      "require_3ds_above": 100
+    },
+    "patterns": {
+      "block_duplicate_transactions": true,
+      "duplicate_window": 60
+    }
+  },
+  "compliance": {
+    "pci_dss": true,
+    "gdpr": true,
+    "psd2": true,
+    "data_retention": {
+      "transaction_data": "7_years",
+      "card_data": "never_store"
+    }
+  },
+  "endpoints": [
+    {
+      "path": "/payments/process",
+      "method": "POST",
+      "description": "Process payment"
+    },
+    {
+      "path": "/payments/refund",
+      "method": "POST",
+      "description": "Process refund"
+    },
+    {
+      "path": "/payments/status/:id",
+      "method": "GET",
+      "description": "Get payment status"
+    },
+    {
+      "path": "/webhooks/:gateway",
+      "method": "POST",
+      "auth": "webhook_signature",
+      "description": "Gateway webhooks"
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "description": "Health check"
+    }
+  },
+  "monitoring": {
+    "metrics": [
+      "payment_success_rate",
+      "average_processing_time",
+      "fraud_detection_rate",
+      "gateway_failure_rate",
+      "refund_rate"
+    ],
+    "alerts": [
+      {
+        "condition": "payment_success_rate < 0.95",
+        "severity": "critical",
+        "message": "Low payment success rate"
+      },
+      {
+        "condition": "fraud_detection_rate > 0.02",
+        "severity": "warning",
+        "message": "High fraud detection rate"
+      }
+    ]
+  },
+  "deployment": {
+    "port": 9004,
+    "resources": {
+      "cpu": "1",
+      "memory": "512Mi"
+    },
+    "scaling": {
+      "min_replicas": 2,
+      "max_replicas": 10,
+      "target_cpu_utilization": 50
+    },
+    "security": {
+      "vault_integration": true,
+      "secret_rotation": "30_days",
+      "encryption_at_rest": true
+    }
+  }
+}

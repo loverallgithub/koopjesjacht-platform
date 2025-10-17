@@ -1,0 +1,249 @@
+{
+  "version": "1.0",
+  "type": "smythos-agent",
+  "metadata": {
+    "name": "StatsAggregatorAgent",
+    "version": "1.0.0",
+    "description": "Real-time analytics, statistics aggregation, and dashboard generation",
+    "author": "Koopjesjacht Platform",
+    "category": "Analytics & BI",
+    "tags": ["analytics", "statistics", "dashboards", "real-time", "data-aggregation"]
+  },
+  "agent": {
+    "type": "analytical",
+    "runtime": "node",
+    "capabilities": [
+      "data_aggregation",
+      "real_time_analytics",
+      "dashboard_generation",
+      "report_creation",
+      "trend_analysis",
+      "predictive_analytics"
+    ]
+  },
+  "inputs": {
+    "hunt_id": {
+      "type": "uuid",
+      "required": false,
+      "description": "Specific hunt ID or null for platform-wide stats"
+    },
+    "metric_type": {
+      "type": "string",
+      "required": true,
+      "enum": ["overview", "leaderboard", "engagement", "revenue", "performance", "custom"],
+      "description": "Type of statistics to retrieve"
+    },
+    "filters": {
+      "type": "object",
+      "required": false,
+      "schema": {
+        "date_range": {
+          "start": { "type": "datetime" },
+          "end": { "type": "datetime" }
+        },
+        "team_ids": { "type": "array" },
+        "shop_ids": { "type": "array" },
+        "user_segment": { "type": "string" }
+      }
+    },
+    "aggregation": {
+      "type": "string",
+      "required": false,
+      "enum": ["hourly", "daily", "weekly", "monthly"],
+      "default": "daily",
+      "description": "Time bucket for aggregation"
+    }
+  },
+  "outputs": {
+    "stats": {
+      "type": "object",
+      "schema": {
+        "metrics": { "type": "object" },
+        "trends": { "type": "array" },
+        "charts": { "type": "array" },
+        "insights": { "type": "array" },
+        "predictions": { "type": "object" },
+        "comparisons": { "type": "object" }
+      }
+    }
+  },
+  "workflow": {
+    "steps": [
+      {
+        "id": "validate_request",
+        "type": "validate",
+        "description": "Validate input parameters"
+      },
+      {
+        "id": "fetch_data",
+        "type": "query",
+        "description": "Retrieve relevant data from database"
+      },
+      {
+        "id": "aggregate_metrics",
+        "type": "transform",
+        "description": "Aggregate data based on metric type",
+        "operations": ["sum", "avg", "count", "distinct", "percentile"]
+      },
+      {
+        "id": "calculate_trends",
+        "type": "analyze",
+        "description": "Calculate trends and patterns"
+      },
+      {
+        "id": "generate_insights",
+        "type": "ai_analyze",
+        "description": "Generate AI-powered insights",
+        "ai_model": "gpt-4"
+      },
+      {
+        "id": "predict_outcomes",
+        "type": "ml_predict",
+        "description": "Predictive analytics for future trends"
+      },
+      {
+        "id": "format_output",
+        "type": "transform",
+        "description": "Format for dashboard consumption"
+      }
+    ]
+  },
+  "metrics": {
+    "overview": [
+      "total_hunts",
+      "active_hunts",
+      "total_participants",
+      "completion_rate",
+      "average_duration",
+      "total_revenue"
+    ],
+    "leaderboard": [
+      "top_teams",
+      "fastest_completions",
+      "highest_scores",
+      "most_hints_used"
+    ],
+    "engagement": [
+      "active_users",
+      "scans_per_hunt",
+      "clue_solve_rate",
+      "hint_usage_rate",
+      "dropout_rate",
+      "return_rate"
+    ],
+    "revenue": [
+      "total_revenue",
+      "revenue_by_hunt",
+      "average_transaction_value",
+      "payment_method_distribution",
+      "refund_rate"
+    ],
+    "performance": [
+      "api_response_times",
+      "database_query_performance",
+      "cache_hit_rate",
+      "error_rates",
+      "uptime"
+    ]
+  },
+  "real_time": {
+    "enabled": true,
+    "update_interval": 5,
+    "streaming_topics": [
+      "hunt_progress",
+      "scan_events",
+      "payment_events",
+      "user_activity"
+    ]
+  },
+  "caching": {
+    "enabled": true,
+    "ttl_by_metric": {
+      "overview": 300,
+      "leaderboard": 60,
+      "engagement": 120,
+      "revenue": 600,
+      "performance": 30
+    },
+    "invalidation_events": [
+      "hunt_completed",
+      "scan_processed",
+      "payment_received"
+    ]
+  },
+  "endpoints": [
+    {
+      "path": "/stats/:huntId",
+      "method": "GET",
+      "description": "Get hunt statistics"
+    },
+    {
+      "path": "/stats/platform",
+      "method": "GET",
+      "description": "Get platform-wide statistics"
+    },
+    {
+      "path": "/leaderboard/:huntId",
+      "method": "GET",
+      "description": "Get leaderboard data"
+    },
+    {
+      "path": "/insights/:huntId",
+      "method": "GET",
+      "description": "Get AI-powered insights"
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "description": "Health check"
+    }
+  },
+  "integrations": {
+    "database": {
+      "type": "postgresql",
+      "read_replica": true,
+      "tables": ["hunts", "teams", "scans", "payments", "users"]
+    },
+    "cache": {
+      "type": "redis",
+      "cluster": true
+    },
+    "streaming": {
+      "type": "redis",
+      "subscribe_to": ["scan_events", "payment_events", "user_events"]
+    }
+  },
+  "monitoring": {
+    "metrics": [
+      "query_execution_time",
+      "cache_hit_ratio",
+      "data_freshness",
+      "aggregation_latency",
+      "dashboard_load_time"
+    ],
+    "alerts": [
+      {
+        "condition": "query_execution_time > 1000",
+        "severity": "warning",
+        "message": "Slow query performance"
+      },
+      {
+        "condition": "cache_hit_ratio < 0.7",
+        "severity": "info",
+        "message": "Low cache hit ratio"
+      }
+    ]
+  },
+  "deployment": {
+    "port": 9003,
+    "resources": {
+      "cpu": "0.5",
+      "memory": "256Mi"
+    },
+    "scaling": {
+      "min_replicas": 1,
+      "max_replicas": 5,
+      "target_cpu_utilization": 70
+    }
+  }
+}

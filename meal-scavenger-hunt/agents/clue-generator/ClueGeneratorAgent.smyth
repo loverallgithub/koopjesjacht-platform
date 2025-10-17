@@ -1,0 +1,197 @@
+{
+  "version": "1.0",
+  "type": "smythos-agent",
+  "metadata": {
+    "name": "ClueGeneratorAgent",
+    "version": "1.0.0",
+    "description": "AI-powered scavenger hunt clue generator with multi-language support and difficulty scaling",
+    "author": "Koopjesjacht Platform",
+    "category": "Content Generation",
+    "tags": ["clues", "hints", "gamification", "nlp", "creative-writing"]
+  },
+  "agent": {
+    "type": "autonomous",
+    "runtime": "node",
+    "capabilities": [
+      "natural_language_generation",
+      "context_analysis",
+      "creative_writing",
+      "hint_generation",
+      "difficulty_scaling",
+      "multilingual"
+    ]
+  },
+  "inputs": {
+    "shop_info": {
+      "type": "object",
+      "required": true,
+      "description": "Information about the shop/venue",
+      "schema": {
+        "name": { "type": "string", "required": true },
+        "description": { "type": "string", "required": false },
+        "address": { "type": "string", "required": false },
+        "fun_facts": { "type": "array", "items": "string" },
+        "menu_items": { "type": "array", "items": "string" },
+        "special_features": { "type": "array", "items": "string" }
+      }
+    },
+    "difficulty_level": {
+      "type": "integer",
+      "required": false,
+      "default": 3,
+      "min": 1,
+      "max": 5,
+      "description": "Difficulty rating (1=easy, 5=very hard)"
+    },
+    "theme": {
+      "type": "string",
+      "required": false,
+      "description": "Hunt theme (e.g., birthday, team-building, tourist)"
+    },
+    "language": {
+      "type": "string",
+      "required": false,
+      "default": "en",
+      "enum": ["en", "nl", "de", "fr"],
+      "description": "Output language for clues and hints"
+    },
+    "previous_clues": {
+      "type": "array",
+      "required": false,
+      "description": "Previous clues to maintain variety"
+    }
+  },
+  "outputs": {
+    "clue": {
+      "type": "object",
+      "description": "Generated clue object",
+      "schema": {
+        "text": { "type": "string" },
+        "difficulty": { "type": "integer" },
+        "estimated_time": { "type": "integer", "unit": "minutes" },
+        "tags": { "type": "array", "items": "string" }
+      }
+    },
+    "hints": {
+      "type": "array",
+      "description": "Progressive hint system",
+      "items": {
+        "text": { "type": "string" },
+        "penalty_points": { "type": "integer" },
+        "level": { "type": "integer" }
+      }
+    }
+  },
+  "workflow": {
+    "steps": [
+      {
+        "id": "analyze_shop",
+        "type": "analyze",
+        "description": "Extract key features from shop information",
+        "ai_model": "gpt-4",
+        "prompt_template": "Analyze this venue and identify the most interesting features for a scavenger hunt clue:\n{{shop_info}}"
+      },
+      {
+        "id": "generate_clue",
+        "type": "generate",
+        "description": "Create creative clue based on features",
+        "ai_model": "gpt-4",
+        "parameters": {
+          "temperature": 0.8,
+          "max_tokens": 200
+        },
+        "prompt_template": "Create a creative scavenger hunt clue for {{shop_name}} with difficulty {{difficulty_level}}/5. Theme: {{theme}}. Make it engaging and solvable."
+      },
+      {
+        "id": "generate_hints",
+        "type": "generate",
+        "description": "Create progressive hint system",
+        "ai_model": "gpt-4",
+        "parameters": {
+          "temperature": 0.7,
+          "count": 3
+        },
+        "prompt_template": "Generate 3 progressive hints for this clue: {{clue_text}}. Each hint should be increasingly obvious."
+      },
+      {
+        "id": "translate",
+        "type": "translate",
+        "description": "Translate to target language if needed",
+        "condition": "language != 'en'",
+        "target_language": "{{language}}"
+      },
+      {
+        "id": "validate",
+        "type": "validate",
+        "description": "Ensure clue quality and appropriateness"
+      }
+    ]
+  },
+  "endpoints": [
+    {
+      "path": "/generate-clue",
+      "method": "POST",
+      "description": "Generate a new scavenger hunt clue",
+      "auth": "api_key"
+    },
+    {
+      "path": "/regenerate-hint",
+      "method": "POST",
+      "description": "Regenerate a specific hint level"
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "description": "Agent health check"
+    }
+  ],
+  "configuration": {
+    "ai_provider": "openai",
+    "default_model": "gpt-4",
+    "fallback_model": "gpt-3.5-turbo",
+    "cache_enabled": true,
+    "cache_ttl": 3600,
+    "rate_limit": {
+      "requests_per_minute": 60,
+      "requests_per_hour": 1000
+    }
+  },
+  "monitoring": {
+    "metrics": [
+      "clue_generation_time",
+      "hint_usage_rate",
+      "difficulty_accuracy",
+      "user_satisfaction",
+      "language_distribution"
+    ],
+    "alerts": [
+      {
+        "condition": "generation_time > 5000",
+        "severity": "warning",
+        "message": "Clue generation taking too long"
+      },
+      {
+        "condition": "error_rate > 0.05",
+        "severity": "critical",
+        "message": "High error rate detected"
+      }
+    ]
+  },
+  "deployment": {
+    "port": 9001,
+    "resources": {
+      "cpu": "0.5",
+      "memory": "256Mi"
+    },
+    "scaling": {
+      "min_replicas": 1,
+      "max_replicas": 5,
+      "target_cpu_utilization": 70
+    },
+    "health_check": {
+      "path": "/health",
+      "interval": 30,
+      "timeout": 5
+    }
+  }
+}

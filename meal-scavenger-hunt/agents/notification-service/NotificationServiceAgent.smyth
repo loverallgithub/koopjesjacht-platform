@@ -1,0 +1,431 @@
+{
+  "version": "1.0",
+  "type": "smythos-agent",
+  "metadata": {
+    "name": "NotificationServiceAgent",
+    "version": "1.0.0",
+    "description": "Multi-channel notification delivery with templating and scheduling",
+    "author": "Koopjesjacht Platform",
+    "category": "Communication & Messaging",
+    "tags": ["notifications", "email", "push", "sms", "templating", "scheduling"]
+  },
+  "agent": {
+    "type": "messaging",
+    "runtime": "node",
+    "capabilities": [
+      "email_delivery",
+      "push_notifications",
+      "sms_delivery",
+      "template_rendering",
+      "notification_scheduling",
+      "delivery_tracking",
+      "preference_management"
+    ]
+  },
+  "inputs": {
+    "action": {
+      "type": "string",
+      "required": true,
+      "enum": ["send", "schedule", "cancel", "update_preferences"],
+      "description": "Notification action to perform"
+    },
+    "notification_data": {
+      "type": "object",
+      "required": true,
+      "schema": {
+        "recipient_id": { "type": "uuid" },
+        "recipient_email": { "type": "string", "format": "email" },
+        "recipient_phone": { "type": "string", "format": "phone" },
+        "channel": { "type": "string", "enum": ["email", "push", "sms", "all"] },
+        "template": { "type": "string" },
+        "variables": { "type": "object" },
+        "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"], "default": "normal" },
+        "scheduled_at": { "type": "datetime" }
+      }
+    },
+    "notification_type": {
+      "type": "string",
+      "required": true,
+      "enum": [
+        "hunt_start",
+        "clue_unlocked",
+        "hint_purchased",
+        "scan_verified",
+        "payment_success",
+        "payment_failed",
+        "hunt_completed",
+        "leaderboard_update",
+        "team_invitation",
+        "password_reset"
+      ],
+      "description": "Type of notification to send"
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "schema": {
+        "success": { "type": "boolean" },
+        "notification_id": { "type": "uuid" },
+        "delivery_status": { "type": "object" },
+        "channels_sent": { "type": "array" },
+        "scheduled_id": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    }
+  },
+  "workflow": {
+    "steps": [
+      {
+        "id": "validate_request",
+        "type": "validate",
+        "description": "Validate notification request"
+      },
+      {
+        "id": "check_preferences",
+        "type": "query",
+        "description": "Check user notification preferences"
+      },
+      {
+        "id": "load_template",
+        "type": "retrieve",
+        "description": "Load notification template"
+      },
+      {
+        "id": "render_content",
+        "type": "transform",
+        "description": "Render template with variables",
+        "operations": ["mustache", "handlebars", "variable_substitution"]
+      },
+      {
+        "id": "process_action",
+        "type": "branch",
+        "branches": [
+          {
+            "condition": "action == 'send'",
+            "steps": ["deliver_notification", "track_delivery"]
+          },
+          {
+            "condition": "action == 'schedule'",
+            "steps": ["schedule_notification", "store_in_queue"]
+          },
+          {
+            "condition": "action == 'cancel'",
+            "steps": ["cancel_scheduled", "update_status"]
+          },
+          {
+            "condition": "action == 'update_preferences'",
+            "steps": ["update_user_preferences", "invalidate_cache"]
+          }
+        ]
+      },
+      {
+        "id": "deliver_notification",
+        "type": "branch",
+        "description": "Deliver via selected channels",
+        "branches": [
+          {
+            "condition": "channel == 'email' || channel == 'all'",
+            "steps": ["send_email"]
+          },
+          {
+            "condition": "channel == 'push' || channel == 'all'",
+            "steps": ["send_push"]
+          },
+          {
+            "condition": "channel == 'sms' || channel == 'all'",
+            "steps": ["send_sms"]
+          }
+        ]
+      },
+      {
+        "id": "emit_event",
+        "type": "event",
+        "event": "notification_sent"
+      }
+    ]
+  },
+  "channels": {
+    "email": {
+      "provider": "smtp",
+      "from_address": "${SMTP_FROM_EMAIL}",
+      "from_name": "Koopjesjacht Platform",
+      "retry_policy": {
+        "max_retries": 3,
+        "backoff": "exponential",
+        "retry_on": ["network_error", "timeout"]
+      },
+      "templates_path": "/templates/email"
+    },
+    "push": {
+      "provider": "firebase",
+      "priority_mapping": {
+        "low": "normal",
+        "normal": "high",
+        "high": "high",
+        "urgent": "high"
+      },
+      "retry_policy": {
+        "max_retries": 2,
+        "backoff": "linear"
+      },
+      "badge_strategy": "increment"
+    },
+    "sms": {
+      "provider": "twilio",
+      "max_length": 160,
+      "retry_policy": {
+        "max_retries": 2,
+        "backoff": "linear"
+      },
+      "fallback_to_email": true
+    }
+  },
+  "templates": {
+    "hunt_start": {
+      "email": {
+        "subject": "Your Hunt Begins: {{hunt_name}}",
+        "template_file": "hunt_start.html"
+      },
+      "push": {
+        "title": "Hunt Started!",
+        "body": "{{hunt_name}} has begun. Good luck!",
+        "sound": "default"
+      }
+    },
+    "clue_unlocked": {
+      "email": {
+        "subject": "New Clue Available: {{hunt_name}}",
+        "template_file": "clue_unlocked.html"
+      },
+      "push": {
+        "title": "New Clue!",
+        "body": "A new clue awaits in {{hunt_name}}",
+        "sound": "clue_sound"
+      }
+    },
+    "scan_verified": {
+      "push": {
+        "title": "Scan Verified!",
+        "body": "You earned {{points}} points at {{shop_name}}",
+        "sound": "success"
+      }
+    },
+    "payment_success": {
+      "email": {
+        "subject": "Payment Confirmation: {{transaction_id}}",
+        "template_file": "payment_success.html"
+      }
+    },
+    "payment_failed": {
+      "email": {
+        "subject": "Payment Failed: Action Required",
+        "template_file": "payment_failed.html"
+      },
+      "push": {
+        "title": "Payment Failed",
+        "body": "Your payment could not be processed. Please try again.",
+        "sound": "error"
+      }
+    },
+    "hunt_completed": {
+      "email": {
+        "subject": "Hunt Completed: {{hunt_name}}",
+        "template_file": "hunt_completed.html"
+      },
+      "push": {
+        "title": "Hunt Completed!",
+        "body": "Congratulations! You finished in {{duration}}",
+        "sound": "celebration"
+      }
+    },
+    "leaderboard_update": {
+      "push": {
+        "title": "Leaderboard Update",
+        "body": "You're now in position {{position}}!",
+        "sound": "achievement"
+      }
+    },
+    "team_invitation": {
+      "email": {
+        "subject": "Team Invitation: {{team_name}}",
+        "template_file": "team_invitation.html"
+      },
+      "push": {
+        "title": "Team Invitation",
+        "body": "{{inviter_name}} invited you to join {{team_name}}",
+        "sound": "default"
+      }
+    },
+    "password_reset": {
+      "email": {
+        "subject": "Password Reset Request",
+        "template_file": "password_reset.html"
+      }
+    }
+  },
+  "scheduling": {
+    "enabled": true,
+    "scheduler": "redis",
+    "max_scheduled_days": 30,
+    "timezone": "UTC",
+    "batch_processing": {
+      "enabled": true,
+      "batch_size": 100,
+      "interval": 60
+    }
+  },
+  "preferences": {
+    "default_settings": {
+      "email_enabled": true,
+      "push_enabled": true,
+      "sms_enabled": false,
+      "marketing_emails": false,
+      "transactional_emails": true
+    },
+    "granular_control": [
+      "hunt_start",
+      "clue_unlocked",
+      "payment_notifications",
+      "team_updates",
+      "leaderboard_updates"
+    ]
+  },
+  "delivery_tracking": {
+    "track_opens": true,
+    "track_clicks": true,
+    "store_duration": "90_days",
+    "metrics": [
+      "delivery_rate",
+      "open_rate",
+      "click_rate",
+      "bounce_rate",
+      "unsubscribe_rate"
+    ]
+  },
+  "rate_limiting": {
+    "per_user": {
+      "max_emails_per_hour": 10,
+      "max_push_per_hour": 20,
+      "max_sms_per_day": 5
+    },
+    "global": {
+      "max_emails_per_minute": 100,
+      "max_push_per_minute": 500
+    }
+  },
+  "endpoints": [
+    {
+      "path": "/notifications/send",
+      "method": "POST",
+      "description": "Send notification immediately"
+    },
+    {
+      "path": "/notifications/schedule",
+      "method": "POST",
+      "description": "Schedule notification for later"
+    },
+    {
+      "path": "/notifications/cancel/:id",
+      "method": "DELETE",
+      "description": "Cancel scheduled notification"
+    },
+    {
+      "path": "/notifications/preferences/:userId",
+      "method": "GET",
+      "description": "Get user notification preferences"
+    },
+    {
+      "path": "/notifications/preferences/:userId",
+      "method": "PUT",
+      "description": "Update user notification preferences"
+    },
+    {
+      "path": "/notifications/history/:userId",
+      "method": "GET",
+      "description": "Get notification history"
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "description": "Health check"
+    }
+  ],
+  "integrations": {
+    "database": {
+      "type": "postgresql",
+      "tables": ["notifications", "notification_preferences", "delivery_log"]
+    },
+    "cache": {
+      "type": "redis",
+      "ttl": 3600
+    },
+    "queue": {
+      "type": "redis",
+      "queues": ["immediate", "scheduled", "retry"]
+    },
+    "smtp": {
+      "host": "${SMTP_HOST}",
+      "port": "${SMTP_PORT}",
+      "secure": true,
+      "auth": {
+        "user": "${SMTP_USER}",
+        "pass": "${SMTP_PASS}"
+      }
+    },
+    "firebase": {
+      "project_id": "${FIREBASE_PROJECT_ID}",
+      "private_key": "${FIREBASE_PRIVATE_KEY}",
+      "client_email": "${FIREBASE_CLIENT_EMAIL}"
+    },
+    "twilio": {
+      "account_sid": "${TWILIO_ACCOUNT_SID}",
+      "auth_token": "${TWILIO_AUTH_TOKEN}",
+      "from_number": "${TWILIO_FROM_NUMBER}"
+    }
+  },
+  "monitoring": {
+    "metrics": [
+      "notifications_sent",
+      "delivery_success_rate",
+      "average_delivery_time",
+      "bounce_rate",
+      "queue_depth",
+      "template_render_time"
+    ],
+    "alerts": [
+      {
+        "condition": "delivery_success_rate < 0.95",
+        "severity": "critical",
+        "message": "Low notification delivery success rate"
+      },
+      {
+        "condition": "bounce_rate > 0.05",
+        "severity": "warning",
+        "message": "High bounce rate detected"
+      },
+      {
+        "condition": "queue_depth > 1000",
+        "severity": "warning",
+        "message": "Notification queue backlog"
+      }
+    ]
+  },
+  "deployment": {
+    "port": 9005,
+    "resources": {
+      "cpu": "0.5",
+      "memory": "256Mi"
+    },
+    "scaling": {
+      "min_replicas": 1,
+      "max_replicas": 5,
+      "target_cpu_utilization": 70
+    },
+    "security": {
+      "vault_integration": true,
+      "secret_rotation": "90_days",
+      "encryption_at_rest": true
+    }
+  }
+}

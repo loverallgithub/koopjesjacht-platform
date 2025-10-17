@@ -103,11 +103,11 @@ services:
     container_name: scavenger_clue_agent
     environment:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
-      AGENT_PORT: 8001
+      AGENT_PORT: 9001
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
       REDIS_URL: redis://redis:3493
     ports:
-      - "8001:8001"
+      - "9001:9001"
     depends_on:
       - postgres
       - redis
@@ -128,11 +128,11 @@ services:
     container_name: scavenger_qr_agent
     environment:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
-      AGENT_PORT: 8002
+      AGENT_PORT: 9002
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
       REDIS_URL: redis://redis:3493
     ports:
-      - "8002:8002"
+      - "9002:9002"
     depends_on:
       - postgres
       - redis
@@ -153,11 +153,11 @@ services:
     container_name: scavenger_stats_agent
     environment:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
-      AGENT_PORT: 8003
+      AGENT_PORT: 9003
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
       REDIS_URL: redis://redis:3493
     ports:
-      - "8003:8003"
+      - "9003:9003"
     depends_on:
       - postgres
       - redis
@@ -178,7 +178,7 @@ services:
     container_name: scavenger_payment_agent
     environment:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
-      AGENT_PORT: 8004
+      AGENT_PORT: 9004
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
       REDIS_URL: redis://redis:3493
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
@@ -186,7 +186,7 @@ services:
       PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
       MOLLIE_API_KEY: ${MOLLIE_API_KEY}
     ports:
-      - "8004:8004"
+      - "9004:9004"
     depends_on:
       - postgres
       - redis
@@ -207,7 +207,7 @@ services:
     container_name: scavenger_notification_agent
     environment:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
-      AGENT_PORT: 8005
+      AGENT_PORT: 9005
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
       REDIS_URL: redis://redis:3493
       SMTP_HOST: ${SMTP_HOST}
@@ -218,7 +218,7 @@ services:
       FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
       FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
     ports:
-      - "8005:8005"
+      - "9005:9005"
     depends_on:
       - postgres
       - redis

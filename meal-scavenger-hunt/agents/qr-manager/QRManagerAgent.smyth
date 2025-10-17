@@ -1,0 +1,215 @@
+{
+  "version": "1.0",
+  "type": "smythos-agent",
+  "metadata": {
+    "name": "QRManagerAgent",
+    "version": "1.0.0",
+    "description": "QR code generation, validation, and scan event handling with fraud detection",
+    "author": "Koopjesjacht Platform",
+    "category": "Security & Validation",
+    "tags": ["qr-codes", "validation", "fraud-detection", "location-services"]
+  },
+  "agent": {
+    "type": "reactive",
+    "runtime": "node",
+    "capabilities": [
+      "qr_generation",
+      "qr_validation",
+      "scan_verification",
+      "location_validation",
+      "fraud_detection",
+      "event_streaming"
+    ]
+  },
+  "inputs": {
+    "action": {
+      "type": "string",
+      "required": true,
+      "enum": ["generate", "validate", "scan", "revoke"],
+      "description": "Action to perform"
+    },
+    "hunt_id": {
+      "type": "uuid",
+      "required": true,
+      "description": "Hunt identifier"
+    },
+    "shop_id": {
+      "type": "uuid",
+      "required": true,
+      "description": "Shop/venue identifier"
+    },
+    "team_id": {
+      "type": "uuid",
+      "required": false,
+      "description": "Team identifier (for generate action)"
+    },
+    "user_id": {
+      "type": "uuid",
+      "required": true,
+      "description": "User performing the action"
+    },
+    "scan_data": {
+      "type": "object",
+      "required": false,
+      "description": "Data from QR code scan",
+      "schema": {
+        "qr_code": { "type": "string" },
+        "location": {
+          "latitude": { "type": "number" },
+          "longitude": { "type": "number" }
+        },
+        "timestamp": { "type": "datetime" },
+        "device_info": { "type": "object" }
+      }
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "object",
+      "schema": {
+        "success": { "type": "boolean" },
+        "qr_code": { "type": "string" },
+        "qr_image": { "type": "string", "format": "base64" },
+        "points_awarded": { "type": "integer" },
+        "verification_status": { "type": "string" },
+        "message": { "type": "string" },
+        "fraud_indicators": { "type": "array" }
+      }
+    }
+  },
+  "workflow": {
+    "steps": [
+      {
+        "id": "validate_request",
+        "type": "validate",
+        "description": "Validate incoming request parameters"
+      },
+      {
+        "id": "check_permissions",
+        "type": "authorize",
+        "description": "Verify user permissions"
+      },
+      {
+        "id": "process_action",
+        "type": "branch",
+        "branches": [
+          {
+            "condition": "action == 'generate'",
+            "steps": ["generate_unique_code", "create_qr_image", "store_in_db"]
+          },
+          {
+            "condition": "action == 'scan'",
+            "steps": ["validate_qr", "check_location", "detect_fraud", "award_points", "emit_event"]
+          },
+          {
+            "condition": "action == 'validate'",
+            "steps": ["check_qr_validity", "check_expiration"]
+          },
+          {
+            "condition": "action == 'revoke'",
+            "steps": ["mark_as_revoked", "invalidate_cache"]
+          }
+        ]
+      }
+    ]
+  },
+  "rules": {
+    "qr_generation": {
+      "format": "UUID-v4",
+      "expiry": "hunt_end_time + 1_hour",
+      "max_scans": 1,
+      "unique_per": ["hunt_id", "shop_id", "team_id"]
+    },
+    "location_validation": {
+      "max_distance": 100,
+      "unit": "meters",
+      "grace_period": 300,
+      "gps_accuracy_required": 50
+    },
+    "fraud_detection": {
+      "min_time_between_scans": 60,
+      "max_scans_per_hour": 10,
+      "velocity_check": true,
+      "device_fingerprinting": true,
+      "pattern_analysis": true
+    },
+    "points_calculation": {
+      "base_points": 100,
+      "hint_penalty": 20,
+      "time_bonus": {
+        "enabled": true,
+        "max_bonus": 50,
+        "decay_rate": 0.1
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "path": "/qr/generate",
+      "method": "POST",
+      "description": "Generate new QR code"
+    },
+    {
+      "path": "/qr/scan",
+      "method": "POST",
+      "description": "Process QR code scan"
+    },
+    {
+      "path": "/qr/validate",
+      "method": "GET",
+      "description": "Validate QR code"
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "description": "Health check"
+    }
+  ],
+  "integrations": {
+    "database": {
+      "type": "postgresql",
+      "tables": ["qr_codes", "scans", "hunt_progress"]
+    },
+    "cache": {
+      "type": "redis",
+      "ttl": 300
+    },
+    "events": {
+      "publisher": "redis",
+      "topics": ["scan_events", "leaderboard_updates"]
+    }
+  },
+  "monitoring": {
+    "metrics": [
+      "qr_generation_count",
+      "scan_success_rate",
+      "fraud_detection_rate",
+      "average_scan_time",
+      "location_validation_failures"
+    ],
+    "alerts": [
+      {
+        "condition": "fraud_detection_rate > 0.05",
+        "severity": "critical",
+        "message": "High fraud detection rate"
+      },
+      {
+        "condition": "scan_success_rate < 0.9",
+        "severity": "warning",
+        "message": "Low scan success rate"
+      }
+    ]
+  },
+  "deployment": {
+    "port": 9002,
+    "resources": {
+      "cpu": "0.5",
+      "memory": "256Mi"
+    },
+    "scaling": {
+      "min_replicas": 1,
+      "max_replicas": 10,
+      "target_cpu_utilization": 60
+    }
+  }
+}
