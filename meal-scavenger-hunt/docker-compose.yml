@@ -26,7 +26,7 @@ services:
     image: redis:7-alpine
     container_name: scavenger_redis
     ports:
-      - "3493:3493"
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -47,7 +47,7 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3527
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
-      REDIS_URL: redis://redis:3493
+      REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_here}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
@@ -105,7 +105,7 @@ services:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
       AGENT_PORT: 9001
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
-      REDIS_URL: redis://redis:3493
+      REDIS_URL: redis://redis:6379
     ports:
       - "9001:9001"
     depends_on:
@@ -130,7 +130,7 @@ services:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
       AGENT_PORT: 9002
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
-      REDIS_URL: redis://redis:3493
+      REDIS_URL: redis://redis:6379
     ports:
       - "9002:9002"
     depends_on:
@@ -155,7 +155,7 @@ services:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
       AGENT_PORT: 9003
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
-      REDIS_URL: redis://redis:3493
+      REDIS_URL: redis://redis:6379
     ports:
       - "9003:9003"
     depends_on:
@@ -180,7 +180,7 @@ services:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
       AGENT_PORT: 9004
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
-      REDIS_URL: redis://redis:3493
+      REDIS_URL: redis://redis:6379
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
       PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
@@ -209,7 +209,7 @@ services:
       SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
       AGENT_PORT: 9005
       DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
-      REDIS_URL: redis://redis:3493
+      REDIS_URL: redis://redis:6379
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
