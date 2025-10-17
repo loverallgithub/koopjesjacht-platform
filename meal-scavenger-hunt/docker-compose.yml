@@ -1,0 +1,260 @@
+#version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: scavenger_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-scavenger}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-scavenger_secret}
+      POSTGRES_DB: ${DB_NAME:-scavenger_hunt}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - scavenger_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-scavenger}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: scavenger_redis
+    ports:
+      - "3493:3493"
+    volumes:
+      - redis_data:/data
+    networks:
+      - scavenger_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # Note: container_name removed for compatibility with replicas scaling
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3527
+      DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
+      REDIS_URL: redis://redis:3493
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_here}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
+    ports:
+      - "3527:3527"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - scavenger_network
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:3527}
+    # Note: container_name removed for compatibility with replicas scaling
+    ports:
+      - "8081:8081"
+      - "443:443"
+    networks:
+      - scavenger_network
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/ssl:/etc/nginx/ssl:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  clue-agent:
+    build:
+      context: ./agents/clue-generator
+      dockerfile: Dockerfile
+    container_name: scavenger_clue_agent
+    environment:
+      SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
+      AGENT_PORT: 8001
+      DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
+      REDIS_URL: redis://redis:3493
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - scavenger_network
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  qr-agent:
+    build:
+      context: ./agents/qr-manager
+      dockerfile: Dockerfile
+    container_name: scavenger_qr_agent
+    environment:
+      SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
+      AGENT_PORT: 8002
+      DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
+      REDIS_URL: redis://redis:3493
+    ports:
+      - "8002:8002"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - scavenger_network
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  stats-agent:
+    build:
+      context: ./agents/stats-aggregator
+      dockerfile: Dockerfile
+    container_name: scavenger_stats_agent
+    environment:
+      SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
+      AGENT_PORT: 8003
+      DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
+      REDIS_URL: redis://redis:3493
+    ports:
+      - "8003:8003"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - scavenger_network
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  payment-agent:
+    build:
+      context: ./agents/payment-handler
+      dockerfile: Dockerfile
+    container_name: scavenger_payment_agent
+    environment:
+      SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
+      AGENT_PORT: 8004
+      DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
+      REDIS_URL: redis://redis:3493
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
+      MOLLIE_API_KEY: ${MOLLIE_API_KEY}
+    ports:
+      - "8004:8004"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - scavenger_network
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  notification-agent:
+    build:
+      context: ./agents/notification-service
+      dockerfile: Dockerfile
+    container_name: scavenger_notification_agent
+    environment:
+      SMYTHOS_API_KEY: ${SMYTHOS_API_KEY}
+      AGENT_PORT: 8005
+      DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
+      REDIS_URL: redis://redis:3493
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+    ports:
+      - "8005:8005"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - scavenger_network
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  nginx:
+    image: nginx:alpine
+    container_name: scavenger_nginx
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - scavenger_network
+    restart: unless-stopped
+
+networks:
+  scavenger_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+  redis_data:

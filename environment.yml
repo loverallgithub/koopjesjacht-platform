@@ -1,0 +1,44 @@
+name: SmythOS
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - numpy
+  - scipy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - plotly
+  - jupyterlab
+  - ipykernel
+  - python-dotenv
+  - httpx
+  - requests
+  - aiohttp
+  - nodejs
+  - spacy
+  - nltk
+  - gensim
+  - faiss-cpu
+  - chromadb
+  - weaviate-client
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cpuonly
+  - pip:
+      - tensorflow
+      - transformers
+      - datasets
+      - sentence-transformers
+      - openai
+      - langchain
+      - llama-index
+      - fastapi
+      - uvicorn
+      - pydantic
+      - tiktoken

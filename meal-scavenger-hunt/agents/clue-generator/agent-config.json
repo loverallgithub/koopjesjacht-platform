@@ -1,0 +1,154 @@
+{
+  "name": "ClueGeneratorAgent",
+  "version": "1.0.0",
+  "description": "SmythOS agent for generating creative scavenger hunt clues and hints",
+  "type": "autonomous",
+  "capabilities": [
+    "natural_language_generation",
+    "context_analysis",
+    "creative_writing",
+    "hint_generation"
+  ],
+  "inputs": [
+    {
+      "name": "shop_info",
+      "type": "object",
+      "required": true,
+      "schema": {
+        "name": "string",
+        "description": "string",
+        "address": "string",
+        "fun_facts": "array",
+        "menu_items": "array",
+        "special_features": "array"
+      }
+    },
+    {
+      "name": "difficulty_level",
+      "type": "integer",
+      "required": false,
+      "default": 3,
+      "min": 1,
+      "max": 5
+    },
+    {
+      "name": "theme",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "language",
+      "type": "string",
+      "required": false,
+      "default": "en",
+      "enum": ["en", "nl", "de", "fr"]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "clue",
+      "type": "object",
+      "schema": {
+        "text": "string",
+        "difficulty": "integer",
+        "estimated_time": "integer",
+        "tags": "array"
+      }
+    },
+    {
+      "name": "hints",
+      "type": "array",
+      "items": {
+        "text": "string",
+        "penalty_points": "integer",
+        "level": "integer"
+      }
+    }
+  ],
+  "workflow": {
+    "steps": [
+      {
+        "id": "analyze_shop",
+        "type": "analyze",
+        "description": "Analyze shop information and extract key features"
+      },
+      {
+        "id": "generate_clue",
+        "type": "generate",
+        "description": "Create creative clue based on shop features",
+        "parameters": {
+          "creativity": 0.8,
+          "max_length": 200
+        }
+      },
+      {
+        "id": "generate_hints",
+        "type": "generate",
+        "description": "Create progressive hints with increasing clarity",
+        "parameters": {
+          "count": 3,
+          "progression": "increasing"
+        }
+      },
+      {
+        "id": "translate",
+        "type": "translate",
+        "description": "Translate clue and hints if needed",
+        "condition": "input.language != 'en'"
+      }
+    ]
+  },
+  "prompts": {
+    "clue_generation": "Create a creative and engaging scavenger hunt clue for a location with the following details:\n- Name: {{shop_name}}\n- Description: {{shop_description}}\n- Fun Facts: {{fun_facts}}\n- Special Features: {{special_features}}\n\nThe clue should:\n1. Be cryptic but solvable\n2. Incorporate local knowledge or shop-specific details\n3. Match difficulty level {{difficulty_level}} (1=easy, 5=very hard)\n4. Be suitable for the theme: {{theme}}\n5. Be engaging and fun to solve\n\nAvoid directly mentioning the shop name.",
+    "hint_generation": "Based on the clue: {{clue_text}}\n\nGenerate 3 progressive hints:\n1. Subtle hint (20% penalty): Provide a vague direction\n2. Medium hint (40% penalty): Give more specific guidance\n3. Strong hint (60% penalty): Make it quite obvious without giving the exact answer\n\nEach hint should build on the previous one."
+  },
+  "integrations": {
+    "database": {
+      "type": "postgresql",
+      "tables": ["shops", "hunt_shops", "clues"]
+    },
+    "cache": {
+      "type": "redis",
+      "ttl": 3600
+    },
+    "api": {
+      "endpoints": [
+        {
+          "path": "/generate-clue",
+          "method": "POST",
+          "auth": "jwt"
+        },
+        {
+          "path": "/regenerate-hint",
+          "method": "POST",
+          "auth": "jwt"
+        }
+      ]
+    }
+  },
+  "monitoring": {
+    "metrics": [
+      "clue_generation_time",
+      "hint_usage_rate",
+      "difficulty_accuracy",
+      "user_satisfaction"
+    ],
+    "alerts": [
+      {
+        "condition": "generation_time > 5000",
+        "message": "Clue generation taking too long"
+      }
+    ]
+  },
+  "deployment": {
+    "resources": {
+      "cpu": "0.5",
+      "memory": "256Mi"
+    },
+    "scaling": {
+      "min_replicas": 1,
+      "max_replicas": 5,
+      "target_cpu_utilization": 70
+    }
+  }
+}
