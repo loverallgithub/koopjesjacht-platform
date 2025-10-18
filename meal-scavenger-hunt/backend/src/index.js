@@ -133,9 +133,12 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
+    logger.info('Attempting to connect to database...');
+    logger.info(`DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`);
+
     await sequelize.authenticate();
     logger.info('Database connection established successfully');
-    
+
     if (process.env.NODE_ENV !== 'production') {
       await sequelize.sync({ alter: true });
       logger.info('Database synchronized');
@@ -145,7 +148,16 @@ async function startServer() {
       logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
     });
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    logger.error('Failed to start server:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      original: error.original ? {
+        message: error.original.message,
+        code: error.original.code,
+        detail: error.original.detail
+      } : undefined
+    });
     process.exit(1);
   }
 }
