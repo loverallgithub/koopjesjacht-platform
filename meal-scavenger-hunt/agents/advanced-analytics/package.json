@@ -1,0 +1,18 @@
+{
+  "name": "advanced-analytics-agent",
+  "version": "1.0.0",
+  "description": "Advanced analytics dashboard with predictive insights",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "redis": "^4.6.7",
+    "pg": "^8.11.3",
+    "axios": "^1.4.0",
+    "uuid": "^9.0.0",
+    "ws": "^8.14.0",
+    "node-cron": "^3.0.2"
+  }
+}

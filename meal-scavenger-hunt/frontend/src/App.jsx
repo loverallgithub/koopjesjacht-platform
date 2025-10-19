@@ -18,21 +18,29 @@ import PrivateRoute from './components/PrivateRoute';
 import LoadingScreen from './components/LoadingScreen';
 import Layout from './components/Layout';
 
+// Public Pages
 const Home = React.lazy(() => import('./pages/Home'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
+const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const HuntList = React.lazy(() => import('./pages/HuntList'));
 const HuntDetail = React.lazy(() => import('./pages/HuntDetail'));
-const TeamDashboard = React.lazy(() => import('./pages/TeamDashboard'));
-const ShopDashboard = React.lazy(() => import('./pages/ShopDashboard'));
-const OrganizerDashboard = React.lazy(() => import('./pages/OrganizerDashboard'));
-const QRScanner = React.lazy(() => import('./pages/QRScanner'));
 const Leaderboard = React.lazy(() => import('./pages/Leaderboard'));
-const Payment = React.lazy(() => import('./pages/Payment'));
-const Profile = React.lazy(() => import('./pages/Profile'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+// Protected Hunter Pages
+const TeamDashboard = React.lazy(() => import('./pages/TeamDashboard'));
+const QRScanner = React.lazy(() => import('./pages/QRScanner'));
+const Payment = React.lazy(() => import('./pages/Payment'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+
+// Protected Venue Pages (role-based)
+const ShopDashboard = React.lazy(() => import('./pages/ShopDashboard'));
+
+// Protected Organizer Pages (role-based)
+const OrganizerDashboard = React.lazy(() => import('./pages/OrganizerDashboard'));
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const theme = createTheme({
   palette: {
@@ -93,7 +101,7 @@ const theme = createTheme({
 });
 
 const paypalOptions = {
-  'client-id': process.env.REACT_APP_PAYPAL_CLIENT_ID,
+  'client-id': import.meta.env.VITE_PAYPAL_CLIENT_ID,
   currency: 'EUR',
   intent: 'capture',
 };
@@ -113,32 +121,34 @@ function App() {
                       <Suspense fallback={<LoadingScreen />}>
                         <Routes>
                           <Route path="/" element={<Layout />}>
+                            {/* Public Routes */}
                             <Route index element={<Home />} />
                             <Route path="login" element={<Login />} />
                             <Route path="register" element={<Register />} />
+                            <Route path="onboarding" element={<Onboarding />} />
                             <Route path="hunts" element={<HuntList />} />
-                            <Route path="hunts/:id" element={<HuntDetail />} />
-                            <Route path="leaderboard/:huntId" element={<Leaderboard />} />
-                            
+                            <Route path="hunts/:huntId" element={<HuntDetail />} />
+                            <Route path="hunts/:huntId/leaderboard" element={<Leaderboard />} />
+
+                            {/* Protected Hunter Routes */}
                             <Route element={<PrivateRoute />}>
-                              <Route path="team-dashboard" element={<TeamDashboard />} />
-                              <Route path="qr-scanner" element={<QRScanner />} />
-                              <Route path="payment" element={<Payment />} />
+                              <Route path="team/:teamId" element={<TeamDashboard />} />
+                              <Route path="team/:teamId/scan" element={<QRScanner />} />
+                              <Route path="team/:teamId/payment" element={<Payment />} />
                               <Route path="profile" element={<Profile />} />
-                              
-                              <Route path="shop-dashboard" element={
-                                <PrivateRoute requiredRole="shop_owner">
-                                  <ShopDashboard />
-                                </PrivateRoute>
-                              } />
-                              
-                              <Route path="organizer-dashboard" element={
-                                <PrivateRoute requiredRole="organizer">
-                                  <OrganizerDashboard />
-                                </PrivateRoute>
-                              } />
                             </Route>
-                            
+
+                            {/* Protected Venue Routes */}
+                            <Route element={<PrivateRoute requiredRole="shop_owner" />}>
+                              <Route path="venue/dashboard" element={<ShopDashboard />} />
+                            </Route>
+
+                            {/* Protected Organizer Routes */}
+                            <Route element={<PrivateRoute requiredRole="organizer" />}>
+                              <Route path="organizer/dashboard" element={<OrganizerDashboard />} />
+                            </Route>
+
+                            {/* 404 */}
                             <Route path="404" element={<NotFound />} />
                             <Route path="*" element={<Navigate to="/404" replace />} />
                           </Route>

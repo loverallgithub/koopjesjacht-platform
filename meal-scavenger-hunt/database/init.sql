@@ -268,6 +268,20 @@ CREATE TABLE notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Audit logs table (for security and compliance)
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_type VARCHAR(50) NOT NULL,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    target_id UUID,
+    action TEXT NOT NULL,
+    details JSONB DEFAULT '{}',
+    ip_address INET,
+    user_agent TEXT,
+    result VARCHAR(20) DEFAULT 'success',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Leaderboard view
 CREATE OR REPLACE VIEW leaderboard AS
 SELECT 
@@ -320,6 +334,11 @@ CREATE INDEX idx_payments_user ON payments(user_id);
 CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_notifications_user ON notifications(user_id, read);
 CREATE INDEX idx_statistics_lookup ON statistics(entity_type, entity_id, stat_date);
+CREATE INDEX idx_audit_user_id ON audit_logs(user_id);
+CREATE INDEX idx_audit_event_type ON audit_logs(event_type);
+CREATE INDEX idx_audit_created_at ON audit_logs(created_at);
+CREATE INDEX idx_audit_target_id ON audit_logs(target_id);
+CREATE INDEX idx_audit_result ON audit_logs(result);
 
 -- Create update trigger for updated_at columns
 CREATE OR REPLACE FUNCTION update_updated_at_column()

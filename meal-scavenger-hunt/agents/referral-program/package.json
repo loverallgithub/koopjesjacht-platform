@@ -1,0 +1,15 @@
+{
+  "name": "referral-program-agent",
+  "version": "1.0.0",
+  "description": "Referral program and viral growth agent",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "redis": "^4.6.7",
+    "axios": "^1.4.0",
+    "uuid": "^9.0.0"
+  }
+}
