@@ -1,0 +1,204 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: koopjesjacht_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-scavenger}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-scavenger_secret}
+      POSTGRES_DB: ${DB_NAME:-scavenger_hunt}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-scavenger}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: koopjesjacht_redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_backend
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3527
+      DATABASE_URL: postgresql://${DB_USER:-scavenger}:${DB_PASSWORD:-scavenger_secret}@postgres:5432/${DB_NAME:-scavenger_hunt}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: http://localhost:3000
+      # API Keys
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      # SMTP
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      # Payment
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
+    ports:
+      - "3527:3527"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - koopjesjacht_network
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3527/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # SmythOS CRE Agents
+  qr-manager:
+    build:
+      context: ./agents/qr-manager
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_qr_manager
+    ports:
+      - "9001:9001"
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  stats-aggregator:
+    build:
+      context: ./agents/stats-aggregator
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_stats_aggregator
+    ports:
+      - "9002:9002"
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  clue-generator:
+    build:
+      context: ./agents/clue-generator
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_clue_generator
+    ports:
+      - "9005:9005"
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  payment-handler:
+    build:
+      context: ./agents/payment-handler
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_payment_handler
+    environment:
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
+    ports:
+      - "9003:9003"
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  notification-service:
+    build:
+      context: ./agents/notification-service
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_notification_service
+    environment:
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM:-noreply@koopjesjacht.nl}
+    ports:
+      - "9004:9004"
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3527
+    container_name: koopjesjacht_frontend
+    ports:
+      - "3000:80"
+      - "3443:443"
+    volumes:
+      - ./frontend/nginx-ssl.conf:/etc/nginx/nginx.conf:ro
+      - ../ssl:/etc/nginx/ssl:ro
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  koopjesjacht_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

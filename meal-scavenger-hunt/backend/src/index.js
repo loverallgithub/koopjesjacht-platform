@@ -23,6 +23,7 @@ const qrRoutes = require('./routes/qr');
 const paymentRoutes = require('./routes/payments');
 const statsRoutes = require('./routes/statistics');
 const notificationRoutes = require('./routes/notifications');
+const agentRoutes = require('./routes/agents');
 
 const app = express();
 const httpServer = createServer(app);
@@ -95,6 +96,7 @@ app.use('/api/qr', qrRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/agents', agentRoutes);
 
 app.get('/health', (req, res) => {
   res.json({
