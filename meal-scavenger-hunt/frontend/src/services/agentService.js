@@ -153,6 +153,112 @@ export const clueService = {
   }
 };
 
+// ===== Media Management Agent =====
+
+export const mediaService = {
+  async uploadMedia(formData) {
+    const response = await api.post(`${AGENT_BASE}/media/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+
+  async getMedia(mediaId) {
+    const response = await api.get(`${AGENT_BASE}/media/${mediaId}`);
+    return response.data;
+  },
+
+  async deleteMedia(mediaId) {
+    const response = await api.delete(`${AGENT_BASE}/media/${mediaId}`);
+    return response.data;
+  },
+
+  async optimizeImage(optimizeData) {
+    const response = await api.post(`${AGENT_BASE}/media/optimize`, optimizeData);
+    return response.data;
+  },
+
+  async getGallery(entityType, entityId) {
+    const response = await api.get(`${AGENT_BASE}/media/gallery/${entityType}/${entityId}`);
+    return response.data;
+  }
+};
+
+// ===== Leaderboard Agent =====
+
+export const leaderboardService = {
+  async getHuntLeaderboard(huntId) {
+    const response = await api.get(`${AGENT_BASE}/leaderboard/hunt/${huntId}`);
+    return response.data;
+  },
+
+  async getGlobalLeaderboard() {
+    const response = await api.get(`${AGENT_BASE}/leaderboard/global`);
+    return response.data;
+  },
+
+  async updateTeamScore(scoreData) {
+    const response = await api.post(`${AGENT_BASE}/leaderboard/update-score`, scoreData);
+    return response.data;
+  },
+
+  async getTeamRank(teamId, huntId) {
+    const response = await api.get(`${AGENT_BASE}/leaderboard/team/${teamId}/rank`, {
+      params: { hunt_id: huntId }
+    });
+    return response.data;
+  },
+
+  async getTeamAchievements(teamId) {
+    const response = await api.get(`${AGENT_BASE}/leaderboard/achievements/${teamId}`);
+    return response.data;
+  }
+};
+
+// ===== Geolocation Agent =====
+
+export const geolocationService = {
+  async geocodeAddress(address) {
+    const response = await api.post(`${AGENT_BASE}/geolocation/geocode`, { address });
+    return response.data;
+  },
+
+  async reverseGeocode(latitude, longitude) {
+    const response = await api.post(`${AGENT_BASE}/geolocation/reverse-geocode`, {
+      latitude,
+      longitude
+    });
+    return response.data;
+  },
+
+  async calculateDistance(origin, destination) {
+    const response = await api.post(`${AGENT_BASE}/geolocation/distance`, {
+      origin,
+      destination
+    });
+    return response.data;
+  },
+
+  async verifyProximity(proximityData) {
+    const response = await api.post(`${AGENT_BASE}/geolocation/verify-proximity`, proximityData);
+    return response.data;
+  },
+
+  async optimizeRoute(routeData) {
+    const response = await api.post(`${AGENT_BASE}/geolocation/optimize-route`, routeData);
+    return response.data;
+  },
+
+  async findNearby(location, radiusKm, type) {
+    const response = await api.get(`${AGENT_BASE}/geolocation/nearby/${location}`, {
+      params: { radius_km: radiusKm, type }
+    });
+    return response.data;
+  }
+};
+
 // ===== Health Check =====
 
 export const agentHealthService = {
@@ -169,6 +275,9 @@ const agentService = {
   payment: paymentService,
   notification: notificationService,
   clue: clueService,
+  media: mediaService,
+  leaderboard: leaderboardService,
+  geolocation: geolocationService,
   health: agentHealthService
 };
 

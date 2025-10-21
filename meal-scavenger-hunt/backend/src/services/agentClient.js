@@ -6,6 +6,9 @@ const STATS_AGGREGATOR_URL = process.env.STATS_AGGREGATOR_URL || 'http://stats-a
 const PAYMENT_HANDLER_URL = process.env.PAYMENT_HANDLER_URL || 'http://payment-handler:9003';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:9004';
 const CLUE_GENERATOR_URL = process.env.CLUE_GENERATOR_URL || 'http://clue-generator:9005';
+const MEDIA_MANAGEMENT_URL = process.env.MEDIA_MANAGEMENT_URL || 'http://media-management:9006';
+const LEADERBOARD_URL = process.env.LEADERBOARD_URL || 'http://leaderboard:9007';
+const GEOLOCATION_URL = process.env.GEOLOCATION_URL || 'http://geolocation:9009';
 
 // Timeout configuration
 const AGENT_TIMEOUT = 10000; // 10 seconds
@@ -334,6 +337,215 @@ async function updateClue(clueId, updates) {
   }
 }
 
+// ===== Media Management Agent =====
+
+async function uploadMedia(formData) {
+  try {
+    const response = await axios.post(`${MEDIA_MANAGEMENT_URL}/upload`, formData, {
+      timeout: AGENT_TIMEOUT * 3, // Longer timeout for file uploads
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Upload media error:', error.message);
+    throw new Error('Media upload failed');
+  }
+}
+
+async function getMedia(mediaId) {
+  try {
+    const response = await axios.get(`${MEDIA_MANAGEMENT_URL}/media/${mediaId}`, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Get media error:', error.message);
+    throw new Error('Failed to retrieve media');
+  }
+}
+
+async function deleteMedia(mediaId) {
+  try {
+    const response = await axios.delete(`${MEDIA_MANAGEMENT_URL}/media/${mediaId}`, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Delete media error:', error.message);
+    throw new Error('Media deletion failed');
+  }
+}
+
+async function optimizeImage(optimizeData) {
+  try {
+    const response = await axios.post(`${MEDIA_MANAGEMENT_URL}/optimize`, optimizeData, {
+      timeout: AGENT_TIMEOUT * 2
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Optimize image error:', error.message);
+    throw new Error('Image optimization failed');
+  }
+}
+
+async function getGallery(entityType, entityId) {
+  try {
+    const response = await axios.get(`${MEDIA_MANAGEMENT_URL}/gallery/${entityType}/${entityId}`, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Get gallery error:', error.message);
+    throw new Error('Failed to retrieve gallery');
+  }
+}
+
+// ===== Leaderboard Agent =====
+
+async function getHuntLeaderboard(huntId) {
+  try {
+    const response = await axios.get(`${LEADERBOARD_URL}/leaderboard/${huntId}`, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Get hunt leaderboard error:', error.message);
+    throw new Error('Failed to retrieve hunt leaderboard');
+  }
+}
+
+async function getGlobalLeaderboard() {
+  try {
+    const response = await axios.get(`${LEADERBOARD_URL}/leaderboard/global`, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Get global leaderboard error:', error.message);
+    throw new Error('Failed to retrieve global leaderboard');
+  }
+}
+
+async function updateTeamScore(scoreData) {
+  try {
+    const response = await axios.post(`${LEADERBOARD_URL}/update-score`, scoreData, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Update team score error:', error.message);
+    throw new Error('Team score update failed');
+  }
+}
+
+async function getTeamRank(teamId, huntId) {
+  try {
+    const response = await axios.get(`${LEADERBOARD_URL}/team/${teamId}/rank`, {
+      params: { hunt_id: huntId },
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Get team rank error:', error.message);
+    throw new Error('Failed to retrieve team rank');
+  }
+}
+
+async function getTeamAchievements(teamId) {
+  try {
+    const response = await axios.get(`${LEADERBOARD_URL}/achievements/${teamId}`, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Get team achievements error:', error.message);
+    throw new Error('Failed to retrieve team achievements');
+  }
+}
+
+// ===== Geolocation Agent =====
+
+async function geocodeAddress(address) {
+  try {
+    const response = await axios.post(`${GEOLOCATION_URL}/geocode`, { address }, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Geocode address error:', error.message);
+    throw new Error('Geocoding failed');
+  }
+}
+
+async function reverseGeocode(latitude, longitude) {
+  try {
+    const response = await axios.post(`${GEOLOCATION_URL}/reverse-geocode`, {
+      latitude,
+      longitude
+    }, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Reverse geocode error:', error.message);
+    throw new Error('Reverse geocoding failed');
+  }
+}
+
+async function calculateDistance(origin, destination) {
+  try {
+    const response = await axios.post(`${GEOLOCATION_URL}/distance`, {
+      origin,
+      destination
+    }, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Calculate distance error:', error.message);
+    throw new Error('Distance calculation failed');
+  }
+}
+
+async function verifyProximity(proximityData) {
+  try {
+    const response = await axios.post(`${GEOLOCATION_URL}/verify-proximity`, proximityData, {
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Verify proximity error:', error.message);
+    throw new Error('Proximity verification failed');
+  }
+}
+
+async function optimizeRoute(routeData) {
+  try {
+    const response = await axios.post(`${GEOLOCATION_URL}/optimize-route`, routeData, {
+      timeout: AGENT_TIMEOUT * 2 // Longer timeout for route optimization
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Optimize route error:', error.message);
+    throw new Error('Route optimization failed');
+  }
+}
+
+async function findNearby(location, radiusKm, type) {
+  try {
+    const response = await axios.get(`${GEOLOCATION_URL}/nearby/${location}`, {
+      params: { radius_km: radiusKm, type },
+      timeout: AGENT_TIMEOUT
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[Agent Client] Find nearby error:', error.message);
+    throw new Error('Nearby location search failed');
+  }
+}
+
 // ===== Health Checks =====
 
 async function checkAgentHealth(agentUrl, agentName) {
@@ -361,7 +573,10 @@ async function checkAllAgentsHealth() {
     { url: STATS_AGGREGATOR_URL, name: 'stats-aggregator' },
     { url: PAYMENT_HANDLER_URL, name: 'payment-handler' },
     { url: NOTIFICATION_SERVICE_URL, name: 'notification-service' },
-    { url: CLUE_GENERATOR_URL, name: 'clue-generator' }
+    { url: CLUE_GENERATOR_URL, name: 'clue-generator' },
+    { url: MEDIA_MANAGEMENT_URL, name: 'media-management' },
+    { url: LEADERBOARD_URL, name: 'leaderboard' },
+    { url: GEOLOCATION_URL, name: 'geolocation' }
   ];
 
   const healthChecks = await Promise.all(
@@ -410,6 +625,28 @@ module.exports = {
   getClue,
   getHuntClues,
   updateClue,
+
+  // Media Management
+  uploadMedia,
+  getMedia,
+  deleteMedia,
+  optimizeImage,
+  getGallery,
+
+  // Leaderboard
+  getHuntLeaderboard,
+  getGlobalLeaderboard,
+  updateTeamScore,
+  getTeamRank,
+  getTeamAchievements,
+
+  // Geolocation
+  geocodeAddress,
+  reverseGeocode,
+  calculateDistance,
+  verifyProximity,
+  optimizeRoute,
+  findNearby,
 
   // Health
   checkAllAgentsHealth

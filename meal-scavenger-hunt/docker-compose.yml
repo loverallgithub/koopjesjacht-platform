@@ -173,6 +173,68 @@ services:
       timeout: 10s
       retries: 3
 
+  media-management:
+    build:
+      context: ./agents/media-management
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_media_management
+    environment:
+      PORT: 9006
+      STORAGE_PATH: /app/uploads
+      MAX_FILE_SIZE: 10485760
+    ports:
+      - "9006:9006"
+    networks:
+      - koopjesjacht_network
+    volumes:
+      - media_uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  leaderboard:
+    build:
+      context: ./agents/leaderboard
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_leaderboard
+    environment:
+      PORT: 9007
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "9007:9007"
+    networks:
+      - koopjesjacht_network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  geolocation:
+    build:
+      context: ./agents/geolocation
+      dockerfile: Dockerfile
+    container_name: koopjesjacht_geolocation
+    environment:
+      PORT: 9009
+    ports:
+      - "9009:9009"
+    networks:
+      - koopjesjacht_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   frontend:
     build:
       context: ./frontend
@@ -199,3 +261,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  media_uploads:

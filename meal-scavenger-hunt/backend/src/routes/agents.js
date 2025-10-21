@@ -246,6 +246,156 @@ router.put('/clue/:clue_id', async (req, res) => {
   }
 });
 
+// ===== Media Management Routes =====
+
+router.post('/media/upload', async (req, res) => {
+  try {
+    const result = await agentClient.uploadMedia(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/media/:media_id', async (req, res) => {
+  try {
+    const result = await agentClient.getMedia(req.params.media_id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/media/:media_id', async (req, res) => {
+  try {
+    const result = await agentClient.deleteMedia(req.params.media_id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/media/optimize', async (req, res) => {
+  try {
+    const result = await agentClient.optimizeImage(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/media/gallery/:entity_type/:entity_id', async (req, res) => {
+  try {
+    const result = await agentClient.getGallery(req.params.entity_type, req.params.entity_id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== Leaderboard Routes =====
+
+router.get('/leaderboard/hunt/:hunt_id', async (req, res) => {
+  try {
+    const result = await agentClient.getHuntLeaderboard(req.params.hunt_id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/leaderboard/global', async (req, res) => {
+  try {
+    const result = await agentClient.getGlobalLeaderboard();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/leaderboard/update-score', async (req, res) => {
+  try {
+    const result = await agentClient.updateTeamScore(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/leaderboard/team/:team_id/rank', async (req, res) => {
+  try {
+    const result = await agentClient.getTeamRank(req.params.team_id, req.query.hunt_id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/leaderboard/achievements/:team_id', async (req, res) => {
+  try {
+    const result = await agentClient.getTeamAchievements(req.params.team_id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== Geolocation Routes =====
+
+router.post('/geolocation/geocode', async (req, res) => {
+  try {
+    const result = await agentClient.geocodeAddress(req.body.address);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/geolocation/reverse-geocode', async (req, res) => {
+  try {
+    const result = await agentClient.reverseGeocode(req.body.latitude, req.body.longitude);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/geolocation/distance', async (req, res) => {
+  try {
+    const result = await agentClient.calculateDistance(req.body.origin, req.body.destination);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/geolocation/verify-proximity', async (req, res) => {
+  try {
+    const result = await agentClient.verifyProximity(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/geolocation/optimize-route', async (req, res) => {
+  try {
+    const result = await agentClient.optimizeRoute(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/geolocation/nearby/:location', async (req, res) => {
+  try {
+    const result = await agentClient.findNearby(req.params.location, req.query.radius_km, req.query.type);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===== Health Check Route =====
 
 router.get('/health', async (req, res) => {

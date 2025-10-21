@@ -1,0 +1,19 @@
+{
+  "name": "leaderboard-agent",
+  "version": "1.0.0",
+  "description": "Leaderboard Agent for Koopjesjacht Platform",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "redis": "^4.6.0",
+    "uuid": "^9.0.0",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
