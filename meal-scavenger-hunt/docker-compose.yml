@@ -183,9 +183,6 @@ services:
     ports:
       - "3000:80"
       - "3443:443"
-    volumes:
-      - ./frontend/nginx-ssl.conf:/etc/nginx/nginx.conf:ro
-      - ../ssl:/etc/nginx/ssl:ro
     networks:
       - koopjesjacht_network
     restart: unless-stopped
